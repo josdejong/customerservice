@@ -12,7 +12,7 @@ The complete application consists of one file: index.html. The file is only
 450 lines of code, including everything: interface, controller, database,
 search queries.
 
-<img src="https://github.com/wjosdejong/customerservice/screenshot.png">
+<img src="https://raw.github.com/wjosdejong/customerservice/master/screenshot.png">
 
 ## Deployment
 
