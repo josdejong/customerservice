@@ -1,0 +1,470 @@
+<!--
+@file Customer Service Demo
+
+@brief
+This demo demonstrates use of CouchDB and AngularJS for creating a customer
+service web application.
+
+@license
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy
+of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+
+Copyright (c) 2011-2012 Jos de Jong
+
+@author Jos de Jong, <wjosdejong@gmail.com>
+@date   2012-10-17
+-->
+
+<!doctype html>
+<html ng-app>
+<head>
+<title>Customer Service</title>
+
+<style>
+    body, html {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        background-color: #F5F5F5;
+    }
+    h1, h2, a.searchresult, p.sub, p.sub a {
+        color: #2190cc;
+    }
+    h1 {
+        margin-bottom: 0;
+    }
+    a.searchresult:hover {
+        color: red;
+    }
+    body, html, input, textarea, td {
+        font-family: verdana, arial, sans-serif;
+        font-size: 10pt;
+        color: #4d4d4d;
+    }
+    th, td {
+        vertical-align: top;
+        text-align: left;
+    }
+    div.frame {
+        padding: 10px;
+    }
+    table.main {
+        background-color: white;
+        border: 1px solid lightgray;
+        border-radius: 3px;
+    }
+    td.header, td.menu {
+        padding: 0 30px;
+    }
+    td.menu {
+        vertical-align: middle;
+        text-align: right;
+    }
+    td.footer {
+        text-align: center;
+        color: gray;
+        padding: 50px 30px 30px 30px;
+    }
+    td.search, td.customer, td.reports {
+        padding: 0 30px 30px 30px;
+    }
+    td.customer, td.reports {
+        border-left: 1px solid lightgray;
+    }
+    td.customer {
+        min-width: 300px;
+    }
+    td.reports {
+        min-width: 400px;
+    }
+    div.report {
+        border-top: 1px solid lightgray;
+        padding-top: 20px;
+        margin-top: 20px;
+    }
+    textarea.report {
+        width: 300px;
+        height: 100px;
+    }
+    input[type=text], textarea {
+        border: 1px solid lightgray;
+        border-radius: 2px;
+    }
+    .error {
+        color: red;
+    }
+    a {
+        color: gray;
+    }
+    a:hover {
+        color: red;
+    }
+    a.remove {
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 150%;
+    }
+    .info {
+        color: gray;
+    }
+</style>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.2/angular.min.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+<script type="text/javascript" src="https://raw.github.com/apache/couchdb/master/share/www/script/jquery.couch.js"></script>
+<!-- documentation: http://bradley-holt.com/2011/07/couchdb-jquery-plugin-reference/ -->
+
+<script type="text/javascript">
+
+/**
+ * @constructor CustomerService.
+ * AngularJS Controller for the customer objects
+ */
+function CustomerService($scope) {
+    // constants
+    var SEARCH_LIMIT = 10;
+
+    // variable definitions
+    $scope.customer = {}; // this object will contain our customer data
+    $scope.status = '';
+    $scope.searchinfo = '';
+    $scope.searchtext = '';
+    $scope.searchresults = [];
+
+    // instantiate a couchdb client. Create the database url based on our location
+    var parts = window.location.href.split('/');
+    var attachment = parts.pop();
+    var doc = parts.pop();
+    var db = parts.pop();
+    $.couch.urlPrefix = parts.join('/');
+    var couch = $.couch.db(db);
+
+    // add a report to the current customer
+    $scope.addReport = function () {
+        if (!$scope.customer.reports) {
+            $scope.customer.reports = [];
+        }
+        $scope.customer.reports.splice(0, 0, {"date": (new Date()).toDateString()} );
+    };
+
+    // remove a report from the current customer
+    $scope.removeReport = function (report) {
+        if ($scope.customer.report) {
+            var index = $scope.customer.reports.indexOf(report);
+            if (index != -1) {
+                $scope.customer.reports.splice(index, 1);
+            }
+        }
+    };
+
+    // add a contact to the current customer
+    $scope.addContact = function () {
+        if (!$scope.customer.contact) {
+            $scope.customer.contact = [];
+        }
+        $scope.customer.contact.push({});
+    };
+
+    // remove a contact from the current customer
+    $scope.removeContact = function (contact) {
+        if ($scope.customer.contact) {
+            var index = $scope.customer.contact.indexOf(contact);
+            if (index != -1) {
+                $scope.customer.contact.splice(index, 1);
+            }
+        }
+    };
+
+    /**
+     * Create a new customer (Changes in current customer will not be saved)
+     */
+    $scope.new = function () {
+        $scope.customer = {};
+    };
+
+    /**
+     * Save the current customer. If new, a new document will be created. Else,
+     * the existing document will be updated.
+     */
+    $scope.save = function () {
+        $scope.error = undefined;
+        $scope.customer.updated = new Date();
+        $scope.status = 'saving...';
+        couch.saveDoc($scope.customer, {
+            success: function (resp) {
+                $scope.status = '';
+                $scope.$apply();
+                $scope.search();
+            },
+            error: function (err) {
+                $scope.error = err;
+                $scope.$apply();
+            }
+        });
+    };
+
+    /**
+     * Load a customer by id
+     * @param {Number} id
+     */
+    $scope.load = function (id) {
+        $scope.error = undefined;
+        $scope.status = 'loading...';
+        couch.openDoc(id, {
+            success: function (doc) {
+                $scope.status = '';
+                $scope.customer = doc;
+                $scope.$apply();
+            },
+            error: function (err) {
+                $scope.error = undefined;
+                $scope.$apply();
+            }
+        });
+    };
+
+    /**
+     * delete the currently loaded customer
+     */
+    $scope.delete = function () {
+        $scope.error = undefined;
+        if ($scope.customer._id) {
+            $scope.status = 'deleting...';
+            couch.removeDoc($scope.customer, {
+                success: function (doc) {
+                    $scope.status = '';
+                    $scope.customer = {};
+                    $scope.$apply();
+                    $scope.search();
+                },
+                error: function (err) {
+                    $scope.error = undefined;
+                    $scope.$apply();
+                }
+            });
+        }
+        else {
+            $scope.customer = {};
+        }
+    };
+
+    /**
+     * Perform a search request to CouchDB.
+     * - If searchtext is empty, the most recent documents will be retrieved.
+     * - If searchtext is non-empty, documents with matching names will be retrieved.
+     */
+    $scope.search = function () {
+        var searchinfo;
+
+        // callback on search success
+        var onSuccess = function (view) {
+            $scope.searchlimited = (view.rows.length > SEARCH_LIMIT);
+            if ($scope.searchlimited) {
+                view.rows.pop();
+            }
+            $scope.searchinfo = searchinfo;
+            $scope.searchresults = view.rows;
+            $scope.$apply();
+        };
+
+        // callback on search error
+        var onError = function (err) {
+            var onDesperate = function (err) {
+                $scope.error = err;
+                $scope.$apply();
+            };
+            if (err == 404) {
+                console.log('Search view not found. Creating view...');
+                $scope.searchinfo = 'creating view...';
+                $scope.$apply();
+                $scope.createSearchView({
+                    success: $scope.search,
+                    error: onDesperate
+                });
+            }
+            else {
+                onDesperate(err);
+            }
+        };
+
+        if ($scope.searchtext.length == 0) {
+            // load most recent files
+            searchinfo = 'most recent files:';
+            couch.view('search/recent', {
+                descending: true,
+                limit: SEARCH_LIMIT,
+                success: onSuccess,
+                error: onError
+            });
+        }
+        else {
+            // load search results
+            searchinfo = 'search results:';
+            couch.view('search/names', {
+                startkey: $scope.searchtext,
+                endkey: $scope.searchtext + 'Z',
+                limit: (SEARCH_LIMIT + 1),  // +1 so we know if there were more results available
+                success: onSuccess,
+                error: onError
+            });
+        }
+    };
+
+    /**
+     * Create a design document for querying search results, containing two
+     * views: documents by name, and by timestamp updated.
+     * @param {Object} params      Object containing callback methods 'success'
+     *                             and 'error'.
+     */
+    $scope.createSearchView = function (params) {
+        var searchview =  {
+            '_id': '_design/search',
+            'language': 'javascript',
+            'views': {
+                'names': {
+                    'map':
+                        (function(doc) {
+                            if (doc.name) {
+                                emit(doc.name, doc.name);
+                            }
+                        }).toString()
+                },
+                'recent': {
+                    'map':
+                        (function(doc) {
+                            if (doc.updated && doc.name) {
+                                emit(doc.updated, doc.name);
+                            }
+                        }).toString()
+                }
+            }
+        };
+
+        $scope.error = undefined;
+        $scope.status = 'creating view...';
+        couch.saveDoc(searchview, {
+            success: function() {
+                $scope.status = '';
+                $scope.$apply();
+                if (params && typeof(params.success) == 'function') {
+                    params.success();
+                }
+            },
+            error: function (err) {
+                $scope.error = err;
+                $scope.$apply();
+                if (params && typeof(params.error) == 'function') {
+                    params.error();
+                }
+            }
+        });
+    };
+
+    // initially load the recent files
+    $scope.search();
+}
+</script>
+</head>
+<body>
+<div ng-controller="CustomerService" class="frame">
+    <table align="center" class="main">
+        <tr>
+            <td class="header" colspan="2">
+                <h1>Customer Service</h1>
+                <p class="sub">A small demonstration showing the power of
+                    <a href="http://couchdb.apache.org" target="_blank">CouchDB</a> and
+                    <a href="http://angularjs.org" target="_blank">AngularJS</a></p>
+            </td>
+
+            <td class="menu">
+                <span class="info">{{status}}</span>
+                <span ng-show="error != undefined" class="error">{{error}}</span>
+                <input type="button" value="New" ng-click="new()"  />
+                <input type="button" value="Save" ng-click="save()"  />
+                <input type="button" value="Delete" ng-click="delete()"
+                       ng-disabled="{{customer._id == undefined}}" />
+            </td>
+        </tr>
+
+        <tr>
+            <td class="search">
+                <h2>Search</h2>
+                <div>
+                    <input type="text" ng-model="searchtext" placeholder="search"
+                           ng-change="search()" />
+                    <input type="button" value="Search" ng-click="search()" />
+                </div>
+
+                <p class="info">{{searchinfo}}</p>
+                <p ng-repeat="result in searchresults">
+                    <a href="#" class="searchresult" ng-click="load(result.id)">{{result.value}}</a>
+                </p>
+                <p class="info" ng-show="searchlimited">more...</p>
+            </td>
+
+            <td class="customer">
+                <h2>Customer</h2>
+                <table>
+                    <tr><th>Name</th><td><input type="text" ng-model="customer.name" /></td><td></td></tr>
+                    <tr><th>Street</th><td><input type="text" ng-model="customer.address.street" /></td></tr>
+                    <tr><th>City</th><td><input type="text" ng-model="customer.address.city" /></td></tr>
+                    <tr><th>Country</th><td><input type="text" ng-model="customer.address.country" /></td></tr>
+                </table>
+                <br>
+
+                <b>Contact</b><br>
+                <div ng-repeat="contact in customer.contact">
+                    <select ng-model="contact.type">
+                        <option value="Phone">Phone</option>
+                        <option value="Email">Email</option>
+                        <option value="Fax">Fax</option>
+                    </select>
+                    <input type="text" ng-model="contact.text" />
+                    <a ng-click="removeContact(contact)" class="remove" href="#">&times;</a>
+                </div>
+                <p>
+                    <input type="button" value="Add" ng-click="addContact()">
+                </p>
+            </td>
+
+            <td class="reports">
+                <h2>Reports</h2>
+                <input type="button" value="Add" ng-click="addReport()">
+                <div ng-repeat="report in customer.reports" class="report">
+                    <table class="report">
+                        <tr><th>Date</th><td>
+                            <input type="text" ng-model="report.date" />
+                        </td><td>
+                            <a ng-click="removeReport(report)" class="remove" href="#">&times;</a>
+                        </td></tr>
+                        <tr><th>Bill</th><td><input type="text" ng-model="report.bill" /></td><td></td></tr>
+                        <tr><th>Payed</th><td><input type="checkbox" ng-model="report.payed" /></td><td></td></tr>
+                        <tr><th>Report</th><td>
+                            <textarea type="text" ng-model="report.report" class="report"></textarea>
+                        </td><td></td></tr>
+                    </table>
+                </div>
+            </td>
+        </tr>
+
+        <tr><td class="footer" colspan="3">
+            Created by Jos de Jong, 2011-2012
+            &bull;
+            <a href="https://github.com/wjosdejong/customerservice">Sourcecode</a>
+            &bull;
+            <a href="https://github.com/wjosdejong/customerservice#readme">Readme</a>
+        </td></tr>
+    </table>
+</div>
+</body>
+</html>
