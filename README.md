@@ -1,20 +1,26 @@
 # Customer Service
 
-Customer Service is a demo demonstrating how to create a powerful web
-application for customer service using AngularJS for the user interface, and
-CouchDB as database.
+Customer Service is a demo showing the ease, power, and flexibility of
+a web application build with
+[AngularJS](http://angularjs.org/) for the user interface and
+[CouchDB](http://couchdb.apache.org/) as database.
+The result is a flexible and powerful solution.
 
-The demo conists of a basic Customer Service application. One can create, edit,
-and delete customers, and for each customer, create multiple reports. The
-customers can be searched by name and by last updated.
+The demo consists of a basic customer service application.
+One can create, edit, and delete customers.
+For each customer, one can create, edit and delete reports.
+The customers can be searched by name and by last updated.
 
-The complete application consists of one file: index.html. The file is only
-450 lines of code, including everything: interface, controller, database,
-search queries.
+The complete application consists of a single file:
+[index.html](https://github.com/wjosdejong/customerservice/blob/master/index.html).
+The file is only a few hundred lines of code, including everything:
+interface, controller, database, search queries.
+(Of course, for a serious application one should separate html, css, and javascript.)
 
 <img src="https://raw.github.com/wjosdejong/customerservice/master/screenshot.png">
 
-## Deployment
+
+## Installation
 
 To install the demo (on Ubuntu):
 
