@@ -4,8 +4,6 @@ Customer Service is a demo showing the ease, power, and flexibility of
 a web application build with
 [AngularJS](http://angularjs.org/) for the user interface and
 [CouchDB](http://couchdb.apache.org/) as database.
-The result is a flexible and powerful solution.
-
 The demo consists of a basic customer service application.
 One can create, edit, and delete customers.
 For each customer, one can create, edit and delete reports.
