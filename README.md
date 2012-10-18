@@ -28,7 +28,7 @@ To install the demo (on Ubuntu):
 
 - install CouchDB via the command
 
-      sudo apt-get install CouchDB
+  `sudo apt-get install CouchDB`
 
 - open the web interface in your browser at http://localhost:5984/_utils
 - create a database, for example named "service"
@@ -37,7 +37,7 @@ To install the demo (on Ubuntu):
 - in the document with id "app", add the file "index.html" as attachment
 - run the application in your browser via
 
-      http://localhost:5984/service/app/index.html
+  `http://localhost:5984/service/app/index.html`
 
 
 Instead of installing CouchDB locally, one can create an account at a hosting
