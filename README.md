@@ -1,7 +1,3 @@
----
-title: Customer Service
----
-
 # Customer Service
 
 Customer Service is a demo showing the ease, power, and flexibility of
