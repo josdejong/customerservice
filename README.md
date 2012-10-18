@@ -1,3 +1,7 @@
+---
+title: Customer Service
+---
+
 # Customer Service
 
 Customer Service is a demo showing the ease, power, and flexibility of
@@ -44,6 +48,3 @@ service for couchdb, such as [Cloudant](https://cloudant.com/).
 
 - AngularJS: http://angularjs.org/
 - CouchDB: http://couchdb.apache.org/
-
-
-Jos de Jong, 2012
