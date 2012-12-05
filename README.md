@@ -10,12 +10,12 @@ For each customer, one can create, edit and delete reports.
 The customers can be searched by name and by last updated.
 
 The complete application consists of a single file:
-[index.html](https://github.com/wjosdejong/customerservice/blob/master/index.html).
+[index.html](https://github.com/josdejong/customerservice/blob/master/index.html).
 The file is only a few hundred lines of code, including everything:
 interface, controller, database, search queries.
 (Of course, for a serious application one should separate html, css, and javascript.)
 
-<img src="https://raw.github.com/wjosdejong/customerservice/master/screenshot.png">
+<img src="https://raw.github.com/josdejong/customerservice/master/screenshot.png">
 
 
 ## Installation
