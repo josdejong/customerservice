@@ -159,7 +159,7 @@ function CustomerService($scope) {
 
     // remove a report from the current customer
     $scope.removeReport = function (report) {
-        if ($scope.customer.report) {
+        if ($scope.customer.reports) {
             var index = $scope.customer.reports.indexOf(report);
             if (index != -1) {
                 $scope.customer.reports.splice(index, 1);
